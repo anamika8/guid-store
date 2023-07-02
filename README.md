@@ -13,3 +13,6 @@ RESTful web API to maintain a database of GUIDs (Globally Unique Identifier) and
 2. Install tornado
 `venv/bin/pip3 install tornado`
 
+3. Install pymongo
+`venv/bin/pip3 install pymongo`
+

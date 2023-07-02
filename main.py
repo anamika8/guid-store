@@ -1,12 +1,19 @@
 import tornado.ioloop
 import tornado.web
 from app import AppHandler
+from db import MongoDbConnect
 
+MONGO_DB_NAME = 'guid-db'
 
 def start_app():
+    # Connect to MongoDB
+    mongoClient = MongoDbConnect()
+    client = mongoClient.connect()
+    assert client is not None, "MongoDB connection failed!!!"
+    db = client[MONGO_DB_NAME]
     return tornado.web.Application([
-        (r"/guid/([A-Fa-f0-9]+)", AppHandler),
-        (r"/", AppHandler),
+        (r"/", AppHandler, dict(db=db)),
+        (r"/guid/(.*)", AppHandler, dict(db=db)),
     ])
 
 
