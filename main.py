@@ -5,19 +5,25 @@ from db import MongoDbConnect
 
 MONGO_DB_NAME = 'guid-db'
 
-def start_app():
+def start_app(mongoClient):
     # Connect to MongoDB
-    mongoClient = MongoDbConnect()
     client = mongoClient.connect()
     assert client is not None, "MongoDB connection failed!!!"
     db = client[MONGO_DB_NAME]
     return tornado.web.Application([
-        (r"/", AppHandler, dict(db=db)),
-        (r"/guid/(.*)", AppHandler, dict(db=db)),
+        (r"/guid/([^/]+)/?", AppHandler, dict(db=db)),
+        (r"/guid/?", AppHandler, dict(db=db)),
+        (r"/.*", AppHandler, dict(db=db)),
     ])
 
 
 if __name__ == "__main__":
-    app = start_app()
-    app.listen(8081)
-    tornado.ioloop.IOLoop.current().start()
+    mongoClient = MongoDbConnect()
+    try:
+        print("Starting the webserver")
+        app = start_app(mongoClient)
+        app.listen(8081)
+        tornado.ioloop.IOLoop.current().start()
+    except KeyboardInterrupt as interrupt:
+        mongoClient.close()
+        print("\nStopping the webserver")
