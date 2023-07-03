@@ -15,19 +15,44 @@ class AppHandler(tornado.web.RequestHandler):
             self.get_guid(guid)
 
     def get_guid(self, guid):
-        self.write("guid-store is empty right now")
+        collection = self.db_client[COLLECTION_NAME]
+        self.guid_already_present(collection, guid)
 
     def post(self, guid=None):
         collection = self.db_client[COLLECTION_NAME]
+        data = json.loads(self.request.body.decode('utf-8'))
         if guid:
-            self.write("Received POST request for GUID: " + guid + "\n")
+            print("Received POST request for GUID: ", guid)
+            self.create_guid(collection, data, guid)
         else:
             print("Creating a system-generated guid")
-            new_guid = RandomGUIDGenerator.generate()
-            data = json.loads(self.request.body.decode('utf-8'))
-            data["guid"] = new_guid
-            added_guid = collection.insert_one(data)
-            inserted_id = added_guid.inserted_id
-            data["_id"] = str(inserted_id)  # Convert ObjectId to string
-            print(f"Created a new guid - \n {data}")
-            self.write(json.dumps(data))
+            self.create_guid(collection, data)
+
+    def guid_already_present(self, collection, guid):
+        result = collection.find({"guid": guid})
+        if result and len(list(result)) > 0:
+            print("Found guid - ", guid)
+            return True
+        else:
+            print("Did not find guid - ", guid)
+            return False
+
+    def create_guid(self, collection, data, guid=None):
+        if not guid:
+            while True:
+                new_guid = RandomGUIDGenerator.generate()
+                guid_exists = self.guid_already_present(collection, new_guid)
+                if not guid_exists:
+                    break
+        else:
+            new_guid = guid
+            if self.guid_already_present(collection, new_guid):
+                self.write(f"guid - {new_guid} already exists")
+                return
+        data["guid"] = new_guid
+        # mongo-db call
+        added_guid = collection.insert_one(data)
+        inserted_id = added_guid.inserted_id
+        data["_id"] = str(inserted_id)  # Convert ObjectId to string
+        print(f"Created a new guid - \n {data}")
+        self.write(json.dumps(data))
