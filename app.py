@@ -1,10 +1,19 @@
+from typing import Any
 import tornado.web
 import json
 from util import GuidUtil
+from bson import ObjectId
 
 COLLECTION_NAME = "guids"
 FIELD_EXPIRE = "expire"
 FIELD_GUID = "guid"
+
+# Helps print the GET /guid/{guid} result
+class ObjectIdEncoder(json.JSONEncoder):
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        return super().default(obj)
 
 class AppHandler(tornado.web.RequestHandler):
 
@@ -19,7 +28,14 @@ class AppHandler(tornado.web.RequestHandler):
 
     def get_guid(self, guid):
         collection = self.db_client[COLLECTION_NAME]
-        self.guid_already_present(collection, guid)
+        result = collection.find_one({"guid": guid})
+        if result and len(list(result)) > 0:
+            print("Found guid - ", guid)
+            json_result = json.dumps(result, cls=ObjectIdEncoder)
+            self.write(json_result)
+        else:
+            print("Did not find guid - ", guid)
+            self.write({})
 
     def post(self, guid=None):
         collection = self.db_client[COLLECTION_NAME]
