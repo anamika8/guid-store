@@ -55,6 +55,20 @@ class AppHandler(tornado.web.RequestHandler):
         else:
             self.send_user_error_message("Need to provide guid like '/guid/{guid}' for PUT request")
 
+    def delete(self, guid=None):
+        collection = self.db_client[COLLECTION_NAME]
+        if guid:
+            print("Received DELETE request for GUID: ", guid)
+            result = collection.delete_one({"guid": guid})
+            if result.deleted_count == 1:
+                print("Document deleted successfully.")
+                self.write("")
+            else:
+                self.send_user_error_message(f"guid - {guid} is not available in data store")
+                return
+        else:
+            self.send_user_error_message("Need to provide guid like '/guid/{guid}' for DELETE request")
+
     def guid_already_present(self, collection, guid):
         result = collection.find({"guid": guid})
         if result and len(list(result)) > 0:
