@@ -59,16 +59,15 @@ class AppHandler(tornado.web.RequestHandler):
             if error_msg != "":
                 self.send_user_error_message(error_msg)
                 return
-                
+            #checks if guid is present in datastore    
+            if not self.guid_already_present(collection, guid):
+                self.send_user_error_message(f"guid - {guid} is not available in data store")
+                return
             filter = {"guid": guid}
             update_operation = {"$set": data}
             result = collection.update_one(filter, update_operation)
-            if result.modified_count == 1:
-                print("Document updated successfully.")
-                self.write(data)
-            else:
-                self.send_user_error_message(f"guid - {guid} is not available in data store")
-                return
+            print("Document updated successfully.")
+            self.write(data)
         else:
             self.send_user_error_message("Need to provide guid like '/guid/{guid}' for PUT request")
 
