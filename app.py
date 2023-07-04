@@ -40,6 +40,7 @@ class AppHandler(tornado.web.RequestHandler):
     def post(self, guid=None):
         collection = self.db_client[COLLECTION_NAME]
         data = json.loads(self.request.body.decode('utf-8'))
+
         if guid:
             print("Received POST request for GUID: ", guid)
             self.create_guid(collection, data, guid)
@@ -104,7 +105,7 @@ class AppHandler(tornado.web.RequestHandler):
             return "The GUID itself should not be part of the payload"
         
         if not GuidUtil.is_hex(guid):
-                return "Provided guid is in incorrect format"
+            return "Provided guid is in incorrect format"
             
         if FIELD_EXPIRE in input_data:
             if not GuidUtil.is_time_format_correct(input_data[FIELD_EXPIRE]):

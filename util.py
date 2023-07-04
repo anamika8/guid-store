@@ -23,6 +23,7 @@ class GuidUtil:
 
     @staticmethod
     def is_time_format_correct(given_time):
+        #check non-digit character
         pattern = r'\D'
         if bool(re.search(pattern, given_time)):
             return False
