@@ -29,11 +29,20 @@ class AppHandler(tornado.web.RequestHandler):
             self.get_guid(guid)
 
     def get_guid(self, guid):
+        # first check in cache
+        cache_result = self.redis_client.get(guid)
+        if cache_result:
+            print(f"Found {guid} in cache")
+            cache_data = json.loads(cache_result.decode('utf-8'))
+            self.write(cache_data)
+            return
         collection = self.db_client[COLLECTION_NAME]
         result = collection.find_one({"guid": guid})
         if result and len(list(result)) > 0:
             print("Found guid - ", guid)
             json_result = json.dumps(result, cls=ObjectIdEncoder)
+            # since it is not available in cache, store it
+            self.add_to_cache(guid, json_result)
             self.write(json_result)
         else:
             print("Did not find guid - ", guid)
@@ -69,6 +78,7 @@ class AppHandler(tornado.web.RequestHandler):
             update_operation = {"$set": data}
             result = collection.update_one(filter, update_operation)
             print("Document updated successfully.")
+            self.update_cache(guid, "update", collection)
             self.write(data)
         else:
             self.send_user_error_message("Need to provide guid like '/guid/{guid}' for PUT request")
@@ -80,6 +90,7 @@ class AppHandler(tornado.web.RequestHandler):
             result = collection.delete_one({"guid": guid})
             if result.deleted_count == 1:
                 print("Document deleted successfully.")
+                self.update_cache(guid, "delete", collection)
                 self.write("")
             else:
                 self.send_user_error_message(f"guid - {guid} is not available in data store")
@@ -149,8 +160,26 @@ class AppHandler(tornado.web.RequestHandler):
         self.add_to_cache(guid, data)
         self.write(json.dumps(data))
 
-    def add_to_cache(self, key, value:dict):
+    def add_to_cache(self, cache_key, value:dict):
         # convert dict value to bytes for storing
         encode_data = json.dumps(value, indent=2).encode('utf-8')
         # store in cache
-        self.redis_client.setex(key, CACHE_EXPIRATION_SECS, encode_data)
+        self.redis_client.setex(cache_key, CACHE_EXPIRATION_SECS, encode_data)
+        print(f"Added {cache_key} to Redis cache")
+
+    def update_cache(self, cache_key, operation, collection):
+        if operation == "delete":
+            # delete from cache
+            result = self.redis_client.delete(cache_key)
+            if result == 1:
+                print(f"Key '{cache_key}' successfully removed from the Redis cache.")
+            else:
+                print(f"Key '{cache_key}' does not exist in the Redis cache.")
+        else:
+            result = collection.find_one({"guid": cache_key})
+            if result and len(list(result)) > 0:
+                print(f"Updating the cache with the modified value from database")
+                json_result = json.dumps(result, cls=ObjectIdEncoder)
+                encode_data = json.dumps(json_result, indent=2).encode('utf-8')
+                # update in cache
+                self.redis_client.setex(cache_key, CACHE_EXPIRATION_SECS, encode_data)
