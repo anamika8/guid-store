@@ -157,7 +157,7 @@ class AppHandler(tornado.web.RequestHandler):
         inserted_id = added_guid.inserted_id
         data["_id"] = str(inserted_id)  # Convert ObjectId to string
         print(f"Created a new guid - \n {data}")
-        self.add_to_cache(guid, data)
+        self.add_to_cache(new_guid, data)
         self.write(json.dumps(data))
 
     def add_to_cache(self, cache_key, value:dict):
