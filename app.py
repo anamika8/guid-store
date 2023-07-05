@@ -7,6 +7,7 @@ from bson import ObjectId
 COLLECTION_NAME = "guids"
 FIELD_EXPIRE = "expire"
 FIELD_GUID = "guid"
+CACHE_EXPIRATION_SECS = 600 # 10 minutes
 
 # Helps print the GET /guid/{guid} result
 class ObjectIdEncoder(json.JSONEncoder):
@@ -17,8 +18,9 @@ class ObjectIdEncoder(json.JSONEncoder):
 
 class AppHandler(tornado.web.RequestHandler):
 
-    def initialize(self, db):
+    def initialize(self, db, redis_client):
         self.db_client = db
+        self.redis_client = redis_client
 
     def get(self, guid=None):
         if guid is None:
@@ -144,4 +146,11 @@ class AppHandler(tornado.web.RequestHandler):
         inserted_id = added_guid.inserted_id
         data["_id"] = str(inserted_id)  # Convert ObjectId to string
         print(f"Created a new guid - \n {data}")
+        self.add_to_cache(guid, data)
         self.write(json.dumps(data))
+
+    def add_to_cache(self, key, value:dict):
+        # convert dict value to bytes for storing
+        encode_data = json.dumps(value, indent=2).encode('utf-8')
+        # store in cache
+        self.redis_client.setex(key, CACHE_EXPIRATION_SECS, encode_data)

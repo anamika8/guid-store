@@ -16,3 +16,5 @@ RESTful web API to maintain a database of GUIDs (Globally Unique Identifier) and
 3. Install pymongo
 `venv/bin/pip3 install pymongo`
 
+4. Install redis
+`venv/bin/pip3 install redis`
