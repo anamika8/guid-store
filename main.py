@@ -19,7 +19,6 @@ def start_app(mongoClient):
         password=REDIS_PW)
     return tornado.web.Application([
         (r"/guid/([^/]+)/?", AppHandler, dict(db=db, redis_client=redis_client)),
-        (r"/guid/?", AppHandler, dict(db=db, redis_client=redis_client)),
         (r"/.*", AppHandler, dict(db=db, redis_client=redis_client)),
     ])
 
