@@ -25,6 +25,7 @@ def start_app(mongoClient):
 
 
 if __name__ == "__main__":
+    # Initialize Mongo Client 
     mongoClient = MongoDbConnect()
     try:
         print("Starting the webserver")

@@ -16,23 +16,28 @@ class ObjectIdEncoder(json.JSONEncoder):
             return str(obj)
         return super().default(obj)
 
+ # A request handler class to respond to HTTP requests with GET, POST, PUT, and DELETE methods
 class AppHandler(tornado.web.RequestHandler):
 
+    # Constructor
     def initialize(self, db, redis_client):
         self.db_client = db
         self.redis_client = redis_client
 
+    # Read operation without GUID
     def get(self, guid=None):
         if guid is None:
             self.write("Welcome to guid-store\n")
         else:
             self.get_guid(guid)
 
+    # Read operation with the given GUID
     def get_guid(self, guid):
         # first check in cache
         cache_result = self.redis_client.get(guid)
         if cache_result:
             print(f"Found {guid} in cache")
+            # Decoding the bytes into a character set
             cache_data = json.loads(cache_result.decode('utf-8'))
             self.write(cache_data)
             return
@@ -48,6 +53,7 @@ class AppHandler(tornado.web.RequestHandler):
             print("Did not find guid - ", guid)
             self.write({})
 
+    # Creates a new GUID and stores it, regardless a GUID is specified or not
     def post(self, guid=None):
         collection = self.db_client[COLLECTION_NAME]
         data = json.loads(self.request.body.decode('utf-8'))
@@ -60,6 +66,7 @@ class AppHandler(tornado.web.RequestHandler):
             self.create_guid(collection, data)
 
 
+    # Updates the metadata for the given GUID
     def put(self, guid=None):
         collection = self.db_client[COLLECTION_NAME]
         data = json.loads(self.request.body.decode('utf-8'))
@@ -78,11 +85,13 @@ class AppHandler(tornado.web.RequestHandler):
             update_operation = {"$set": data}
             result = collection.update_one(filter, update_operation)
             print("Document updated successfully.")
+            # Updates the cache
             self.update_cache(guid, "update", collection)
             self.write(data)
         else:
             self.send_user_error_message("Need to provide guid like '/guid/{guid}' for PUT request")
 
+    # Deletes the GUID and its associated data
     def delete(self, guid=None):
         collection = self.db_client[COLLECTION_NAME]
         if guid:
@@ -98,6 +107,7 @@ class AppHandler(tornado.web.RequestHandler):
         else:
             self.send_user_error_message("Need to provide guid like '/guid/{guid}' for DELETE request")
 
+    # Helper function to check if the given GUID is already present or not
     def guid_already_present(self, collection, guid):
         result = collection.find({"guid": guid})
         if result and len(list(result)) > 0:
@@ -106,12 +116,13 @@ class AppHandler(tornado.web.RequestHandler):
         else:
             print("Did not find guid - ", guid)
             return False
-        
+
+    # Method to send an error message and set status code accordingly 
     def send_user_error_message(self, usr_error_msg):
         self.set_status(400)
         self.write(usr_error_msg)
         
-    # does user input validation before POST/ PUT
+    # Does user input validation before POST/ PUT
     def input_data_validation(self, input_data, guid):
         if FIELD_GUID in input_data:
             return "The GUID itself should not be part of the payload"
@@ -126,6 +137,7 @@ class AppHandler(tornado.web.RequestHandler):
                 return "expire field value should be greater than current time"
         return ""
 
+    # Helper function to create a new GUID for POST operation
     def create_guid(self, collection, data, guid=None):
         if not guid:
             # generate a unique random guid if not provided
@@ -160,6 +172,7 @@ class AppHandler(tornado.web.RequestHandler):
         self.add_to_cache(new_guid, data)
         self.write(json.dumps(data))
 
+    # Add GUID metadata into Cache
     def add_to_cache(self, cache_key, value:dict):
         # convert dict value to bytes for storing
         encode_data = json.dumps(value, indent=2).encode('utf-8')
@@ -167,15 +180,17 @@ class AppHandler(tornado.web.RequestHandler):
         self.redis_client.setex(cache_key, CACHE_EXPIRATION_SECS, encode_data)
         print(f"Added {cache_key} to Redis cache")
 
+     # Updates or Deletes GUID metadata from Cache 
     def update_cache(self, cache_key, operation, collection):
         if operation == "delete":
-            # delete from cache
+            # Delete from cache
             result = self.redis_client.delete(cache_key)
             if result == 1:
                 print(f"Key '{cache_key}' successfully removed from the Redis cache.")
             else:
                 print(f"Key '{cache_key}' does not exist in the Redis cache.")
         else:
+            # Updates Cache
             result = collection.find_one({"guid": cache_key})
             if result and len(list(result)) > 0:
                 print(f"Updating the cache with the modified value from database")
