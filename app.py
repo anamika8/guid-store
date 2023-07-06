@@ -27,6 +27,7 @@ class AppHandler(tornado.web.RequestHandler):
     # Read operation without GUID
     def get(self, guid=None):
         if guid is None:
+            self.set_header("Content-Type", "application/json")
             self.write("Welcome to guid-store\n")
         else:
             self.get_guid(guid)
@@ -39,6 +40,7 @@ class AppHandler(tornado.web.RequestHandler):
             print(f"Found {guid} in cache")
             # Decoding the bytes into a character set
             cache_data = json.loads(cache_result.decode('utf-8'))
+            self.set_header("Content-Type", "application/json")
             self.write(cache_data)
             return
         collection = self.db_client[COLLECTION_NAME]
@@ -48,9 +50,11 @@ class AppHandler(tornado.web.RequestHandler):
             json_result = json.dumps(result, cls=ObjectIdEncoder)
             # since it is not available in cache, store it
             self.add_to_cache(guid, json_result)
+            self.set_header("Content-Type", "application/json")
             self.write(json_result)
         else:
             print("Did not find guid - ", guid)
+            self.set_header("Content-Type", "application/json")
             self.write({})
 
     # Creates a new GUID and stores it, regardless a GUID is specified or not
@@ -87,6 +91,7 @@ class AppHandler(tornado.web.RequestHandler):
             print("Document updated successfully.")
             # Updates the cache
             self.update_cache(guid, "update", collection)
+            self.set_header("Content-Type", "application/json")
             self.write(data)
         else:
             self.send_user_error_message("Need to provide guid like '/guid/{guid}' for PUT request")
@@ -100,6 +105,7 @@ class AppHandler(tornado.web.RequestHandler):
             if result.deleted_count == 1:
                 print("Document deleted successfully.")
                 self.update_cache(guid, "delete", collection)
+                self.set_header("Content-Type", "application/json")
                 self.write("")
             else:
                 self.send_user_error_message(f"guid - {guid} is not available in data store")
@@ -151,6 +157,7 @@ class AppHandler(tornado.web.RequestHandler):
             if self.guid_already_present(collection, new_guid):
                 # send error message if duplicate guid is used
                 self.set_status(400)
+                self.set_header("Content-Type", "application/json")
                 self.write(f"guid - {new_guid} already exists")
                 return
         
@@ -170,6 +177,7 @@ class AppHandler(tornado.web.RequestHandler):
         data["_id"] = str(inserted_id)  # Convert ObjectId to string
         print(f"Created a new guid - \n {data}")
         self.add_to_cache(new_guid, data)
+        self.set_header("Content-Type", "application/json")
         self.write(json.dumps(data))
 
     # Add GUID metadata into Cache
