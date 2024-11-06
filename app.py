@@ -24,6 +24,7 @@ class ObjectIdEncoder(json.JSONEncoder):
         return super().default(obj)
 
 def lambda_handler(event, context):
+    print("Lambda function invoked")
     # Parse HTTP method and path
     http_method = event['httpMethod']
     path = event['path']
@@ -51,6 +52,8 @@ def lambda_handler(event, context):
         elif '/guid/' in path:  # GET /guid/{guid} to retrieve a specific GUID
             guid = path.split('/')[-1]
             return get_guid(guid)
+        else:
+            print("Error: Unable to consume the request")
 
     # Handle PUT request to update metadata for a GUID
     elif http_method == 'PUT' and '/guid/' in path:
