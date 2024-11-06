@@ -10,7 +10,8 @@ dynamodb = boto3.resource('dynamodb')
 table_name = 'GUIDStore'    
 table = dynamodb.Table(table_name)
 
-redis_client = redis.StrictRedis.from_url('guidcache-qgk9x0.serverless.use2.cache.amazonaws.com:6379') 
+# redis_client = redis.StrictRedis.from_url(f"redis://{os.environ['REDIS_ENDPOINT']}")
+redis_client = redis.StrictRedis.from_url('redis://guidcache-qgk9x0.serverless.use2.cache.amazonaws.com:6379')
 
 # Constants
 FIELD_EXPIRE = "expire"
