@@ -28,7 +28,7 @@ def lambda_handler(event, context):
     print("Lambda function invoked")
     print("Received event:", json.dumps(event))
     # Parse HTTP method and path
-    http_method = event['httpMethod']
+    http_method = event['requestContext']['http']['method']
     path = event['path']
 
     # Handle POST request for creating a new GUID
