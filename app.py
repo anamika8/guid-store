@@ -66,6 +66,7 @@ def lambda_handler(event, context):
         guid = path.split('/')[-1]
         return delete_guid(guid)
 
+    print("ERROR: Did not match expected paths")
     return {
         'statusCode': 400,
         'body': json.dumps({'message': 'Invalid request'})
