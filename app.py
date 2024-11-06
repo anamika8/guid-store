@@ -29,7 +29,7 @@ def lambda_handler(event, context):
     print("Received event:", json.dumps(event))
     # Parse HTTP method and path
     http_method = event['requestContext']['http']['method']
-    event['rawPath']
+    path = event['rawPath']
 
     # Handle POST request for creating a new GUID
     if http_method == 'POST':
