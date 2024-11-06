@@ -7,10 +7,10 @@ from typing import Any
 
 # DynamoDB and Redis initialization using environment variables
 dynamodb = boto3.resource('dynamodb')
-table_name = os.environ['DYNAMODB_TABLE_NAME']  # Set to 'GUIDStore'
+table_name = 'GUIDStore'    
 table = dynamodb.Table(table_name)
 
-redis_client = redis.StrictRedis.from_url(f"redis://{os.environ['REDIS_ENDPOINT']}")  # Set to 'guidcache'
+redis_client = redis.StrictRedis.from_url('guidcache-qgk9x0.serverless.use2.cache.amazonaws.com:6379') 
 
 # Constants
 FIELD_EXPIRE = "expire"
