@@ -26,6 +26,7 @@ class ObjectIdEncoder(json.JSONEncoder):
 
 def lambda_handler(event, context):
     print("Lambda function invoked")
+    print("Received event:", json.dumps(event))
     # Parse HTTP method and path
     http_method = event['httpMethod']
     path = event['path']
