@@ -1,23 +1,11 @@
-from pymongo import MongoClient
-from urllib.parse import quote_plus
-import ssl
+import boto3
 
-uri = "mongodb+srv://my-first-user:Welcome123@my-first-atlas-db.qa1bd.mongodb.net/?retryWrites=true&w=majority"
+def save_guid(table, guid):
+    # Function to save GUID in DynamoDB
+    table.put_item(Item={'guid': guid})
 
-# Helps to connect and disconnect from MongoDB Server
-class MongoDbConnect:
-    # constructor
-    def __init__(self, client=None):
-        self.client = client
+def get_guid(table, guid):
+    # Function to retrieve GUID from DynamoDB
+    response = table.get_item(Key={'guid': guid})
+    return response.get('Item')
 
-    def connect(self):
-        # Connects when client is none
-        if not self.client:
-            self.client = MongoClient(uri, ssl=True, tlsAllowInvalidCertificates=True)
-        return self.client
-
-    def close(self):
-        if self.client:
-            self.client.close()
-            self.client = None
-        print("MongoDB client closed")
