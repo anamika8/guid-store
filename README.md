@@ -2,6 +2,7 @@
 RESTful web API to maintain a database of GUIDs (Globally Unique Identifier) and associated metadata.
 
 # Technical Specification
+- Python
 - Tornado Web Framework
 - MongoDB as permanent data store (hosted by https://account.mongodb.com/)
 - Redis as the cache store (hosted by https://redis.com/redis-enterprise-cloud/overview/)
