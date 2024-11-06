@@ -40,7 +40,7 @@ def lambda_handler(event, context):
 
     # Handle GET request to retrieve a GUID or list all GUIDs
     elif http_method == 'GET':
-        if path == '/':  # GET /guid without specifying a GUID
+        if path == '/guid':  # GET /guid without specifying a GUID
             # Return a welcome message or list all GUIDs
             return {
                 'statusCode': 200,
