@@ -99,6 +99,7 @@ def create_guid(data, guid=None):
 # Helper function to get GUID information
 def get_guid(guid):
     # Check Redis cache first
+    '''
     cache_result = redis_client.get(guid)
     if cache_result:
         cache_data = json.loads(cache_result.decode('utf-8'))
@@ -106,7 +107,7 @@ def get_guid(guid):
             'statusCode': 200,
             'body': json.dumps({'message': 'Retrieved from cache', 'guid': guid, 'data': cache_data})
         }
-
+    '''
     # Retrieve from DynamoDB if not cached
     response = table.get_item(Key={FIELD_GUID: guid})
     if 'Item' in response:
