@@ -1,17 +1,22 @@
 import json
 import boto3
+import redis
 import os
 from util import GuidUtil
 from typing import Any
 
-# DynamoDB initialization using environment variables
+# DynamoDB and Redis initialization using environment variables
 dynamodb = boto3.resource('dynamodb')
 table_name = 'GUIDStore'    
 table = dynamodb.Table(table_name)
 
+# redis_client = redis.StrictRedis.from_url(f"redis://{os.environ['REDIS_ENDPOINT']}")
+redis_client = redis.StrictRedis.from_url('redis://guidcache-qgk9x0.serverless.use2.cache.amazonaws.com:6379')
+
 # Constants
 FIELD_EXPIRE = "expire"
 FIELD_GUID = "guid"
+CACHE_EXPIRATION_SECS = 600  # 10 minutes
 
 class ObjectIdEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
@@ -19,7 +24,7 @@ class ObjectIdEncoder(json.JSONEncoder):
             return str(obj)
         return super().default(obj)
 
-def lambda_handler(event, context):
+def lambda_handler_test(event, context):
     print("Lambda function invoked")
     print("Received event:", json.dumps(event))
     # Parse HTTP method and path
@@ -79,9 +84,12 @@ def create_guid(data, guid=None):
     # Validate and set expiration if not provided
     if FIELD_EXPIRE not in data:
         data[FIELD_EXPIRE] = GuidUtil.generate_expiration_time()
-    print("Inserting into DynamoDB")
+    print("inserting into dynamodb")
     # Insert into DynamoDB
     table.put_item(Item=data)
+    print("inserting into REdis")
+    # Cache the GUID in Redis
+    #add_to_cache(guid, data)
     
     return {
         'statusCode': 201,
@@ -90,10 +98,22 @@ def create_guid(data, guid=None):
 
 # Helper function to get GUID information
 def get_guid(guid):
-    # Retrieve from DynamoDB
+    # Check Redis cache first
+    '''
+    cache_result = redis_client.get(guid)
+    if cache_result:
+        cache_data = json.loads(cache_result.decode('utf-8'))
+        return {
+            'statusCode': 200,
+            'body': json.dumps({'message': 'Retrieved from cache', 'guid': guid, 'data': cache_data})
+        }
+    '''
+    # Retrieve from DynamoDB if not cached
     response = table.get_item(Key={FIELD_GUID: guid})
     if 'Item' in response:
         data = response['Item']
+        # Cache the result in Redis
+        #add_to_cache(guid, data)
         return {
             'statusCode': 200,
             'body': json.dumps({'message': 'GUID retrieved', 'guid': guid, 'data': data})
@@ -115,19 +135,27 @@ def update_guid(guid, data):
             ':user': data.get('user')
         }
     )
+    # Update Redis cache
+    #add_to_cache(guid, data)
     return {
         'statusCode': 200,
         'body': json.dumps({'message': 'GUID updated', 'guid': guid, 'data': data})
     }
 
-# Helper function to delete a GUID from DynamoDB
+# Helper function to delete a GUID from DynamoDB and Redis
 def delete_guid(guid):
     # Delete from DynamoDB
     table.delete_item(Key={FIELD_GUID: guid})
+    # Remove from Redis cache
+    redis_client.delete(guid)
     return {
         'statusCode': 200,
         'body': json.dumps({'message': 'GUID deleted', 'guid': guid})
     }
+
+# Helper function to add data to Redis cache
+def add_to_cache(guid, data):
+    redis_client.setex(guid, CACHE_EXPIRATION_SECS, json.dumps(data))
 
 # Optional: Function to list all GUIDs (Use with caution for large datasets)
 def list_all_guids():
@@ -138,5 +166,4 @@ def list_all_guids():
         'statusCode': 200,
         'body': json.dumps({'guids': items})
     }
-
 
