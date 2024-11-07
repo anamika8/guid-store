@@ -84,9 +84,10 @@ def create_guid(data, guid=None):
     # Validate and set expiration if not provided
     if FIELD_EXPIRE not in data:
         data[FIELD_EXPIRE] = GuidUtil.generate_expiration_time()
-
+    print("inserting into dynamodb")
     # Insert into DynamoDB
     table.put_item(Item=data)
+    print("inserting into REdis")
     # Cache the GUID in Redis
     add_to_cache(guid, data)
     
