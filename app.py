@@ -89,7 +89,7 @@ def create_guid(data, guid=None):
     table.put_item(Item=data)
     print("inserting into REdis")
     # Cache the GUID in Redis
-    add_to_cache(guid, data)
+    #add_to_cache(guid, data)
     
     return {
         'statusCode': 201,
