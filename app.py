@@ -112,7 +112,7 @@ def get_guid(guid):
     if 'Item' in response:
         data = response['Item']
         # Cache the result in Redis
-        add_to_cache(guid, data)
+        #add_to_cache(guid, data)
         return {
             'statusCode': 200,
             'body': json.dumps({'message': 'GUID retrieved', 'guid': guid, 'data': data})
@@ -135,7 +135,7 @@ def update_guid(guid, data):
         }
     )
     # Update Redis cache
-    add_to_cache(guid, data)
+    #add_to_cache(guid, data)
     return {
         'statusCode': 200,
         'body': json.dumps({'message': 'GUID updated', 'guid': guid, 'data': data})
