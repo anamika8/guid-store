@@ -26,6 +26,9 @@ def lambda_handler(event, context):
     http_method = event['requestContext']['http']['method']
     path = event['rawPath']
 
+    print("HTTP method - ", http_method)
+    print("path == ", path)
+
     # Handle POST request for creating a new GUID
     if http_method == 'POST':
         if path == '/guid':  # POST /guid
